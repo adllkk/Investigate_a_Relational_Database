@@ -1,0 +1,143 @@
+/* Query 1 - query used for the first insight */
+--  We want to understand about category of film that cusomer are watching
+WITH film_category AS 
+(
+	SELECT  c.category_id,
+		ficat.film_id as idfilm,
+		c.name as name_category 
+	FROM  category c
+		JOIN film_category ficat
+			 ON ficat.category_id = c.category_id
+
+)
+,
+film_tit AS
+ (
+	SELECT  
+	 f.title as film_title ,
+	 f.film_id as film_id
+	FROM film f
+)
+,
+inventoryy as
+ (
+	SELECT 
+	 film.title,
+	 film.film_id as id_inv_film ,
+	 inventory.film_id,
+	 inventory.inventory_id as id_inventor
+	from film
+		join inventory
+	 		on film.film_id = inventory.film_id)
+,
+film_group as 
+(   SELECT
+      fc.idfilm as id_film_gr ,
+      ft.film_title,
+      fc.name_category as category_nam 
+   FROM
+      film_category fc 
+      JOIN
+         film_tit ft 
+         ON ft.film_id = fc.idfilm),
+film_rent as
+ (
+	SELECT 
+	 	inv.id_inventor,
+	 	inv.id_inv_film as film_id_alt,
+		 rn.customer_id
+	 FROM inventoryy inv 
+	 	JOIN rental rn 
+	 		ON inv.id_inventor= rn.inventory_id
+)
+	SELECT  
+		fr.film_id_alt,
+		fg.id_film_gr,
+		fg.category_nam,
+		COUNT(category_nam) over(partition by fg.category_nam) as top_watching
+	FROM film_rent fr 
+		JOIN film_group fg ON fr.film_id_alt = fg.id_film_gr 
+	ORDER BY 4
+
+/* Query 2 - query used for the second insight */
+--We want to Know who are the top 10 Paying customer ?
+with customer_num as 
+ (
+	 Select 
+	 	CONCAT(c.first_name,' ', c.last_name) AS full_name ,
+		sum(p.amount) as total_amount
+	 FROM 
+	 customer c 
+      JOIN
+         payment p
+	 		ON c.customer_id = p.customer_id
+		GROUP BY 1	 
+	 	ORDER BY 2 DESC  
+	 	
+)
+	SELECT 
+	full_name,total_amount
+	From customer_num
+
+/* Query 3 - query used for the third insight */
+--We want to now which of the two stores that customers use a lot.
+with store_active as 
+(
+select 
+CONCAT(st.first_name, ' ',st.last_name) as full_name,
+s.store_id as idstore,
+p.payment_id
+from
+staff st 
+JOIN payment  p 
+ON p.staff_id=st.staff_id 
+JOIN store s
+ON st.store_id = s.store_id
+)
+SELECT DISTINCT 
+Count(sa.Full_name) OVER (PARTITION BY sa.full_name ) as best_store,
+sa.full_name,
+sa.idstore
+FROM store_active sa 
+ORDER BY 1
+
+
+
+
+
+
+/* Query 4 - query used for the fourth insight */
+--What is the distribution of family films compared to other film categories and duration of rent?
+
+with film_category_name as 
+(
+	SELECT
+		f.title as film_title,
+		f.rental_duration as rental_duration,
+		c.name as category_name
+		FROM film_category fc
+		JOIN film f 
+		ON f.film_id=fc.film_id
+		JOIN category c
+		ON c.category_id = fc.category_id
+		where c.name IN ('Animation','Children','Classics','Comedy','Family','Music')
+		
+)
+,
+cat_film as
+(
+	SELECT 
+		fcn.category_name as cat_name,
+		fcn.film_title,
+		fcn.category_name,
+		fcn.rental_duration,
+		NTILE(4) OVER (ORDER BY fcn.rental_duration) AS standard_quartile
+		FROM film_category_name fcn
+		order by 4
+)
+select
+	cf.category_name,
+  	cf.standard_quartile,
+  	COUNT(*)
+	FROM cat_film cf
+	GROUP BY 1, 2 
