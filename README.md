@@ -22,3 +22,15 @@ The Sakila Database holds information about a company that rents movie DVDs. For
 # Database Diagram (ERD)
 
 ![](DVD-RENTAL-ERD.png)
+
+Software used: Postgresql
+
+PostgreSQL is an open-source object-relational database system that is used frequently in industry.
+
+Object-relational databases use a hybrid approach to databases.
+
+In object databases, information is stored as objects, much like object-oriented programming.
+
+In relational databases, information is stored in tables with relationships between tables defined by primary and foreign keys.
+
+Importantly, PostgreSQL allows the use of advanced functions (such as Window Functions), and even development and use of custom functions written in different programming languages. Here is a link to better understand what is meant by an object-relational database, and how it differs from a relational database.
